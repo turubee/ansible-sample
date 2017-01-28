@@ -1,0 +1,57 @@
+env: prod
+aws_profile: dcube-prod
+aws_region: ap-northeast-1
+
+vpc:
+  name: prod-vpc
+  cidr_block: 10.10.0.0/16
+subnet:
+  - name: public-1a
+    cidr: 10.10.1.0/24
+    az: ap-northeast-1a
+    route: public
+  - name: public-1c
+    cidr: 10.10.3.0/24
+    az: ap-northeast-1c
+    route: public
+  - name: private-1a
+    cidr: 10.10.11.0/24
+    az: ap-northeast-1a
+    route: private
+  - name: private-1c
+    cidr: 10.10.13.0/24
+    az: ap-northeast-1c
+    route: private
+keypair:
+  name: dcube-{{ env }}
+sg:
+  - name: proxyserver
+    desc: "proxyserver security group"
+    rules:
+      - proto: tcp
+        from_port: 22
+        to_port: 22
+        cidr_ip: 0.0.0.0/0
+
+  - name: webserver
+    desc: "webserver security group"
+    rules:
+      - proto: tcp
+        from_port: 80
+        to_port: 80
+        cidr_ip: 0.0.0.0/0
+      - proto: tcp
+        from_port: 22
+        to_port: 22
+        #cidr_ip: "{{ vpc.cidr_block }}"
+        cidr_ip: 0.0.0.0/0
+
+ec2:
+  - name: web1
+    exact_count: 1
+    state: present
+    instance_type: t2.micro
+    ami_image: ami-56d4ad31
+    security_group: ['webserver']
+    subnet: public-1a
+    volume_size: 8

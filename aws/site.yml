@@ -1,0 +1,138 @@
+---
+- name: bootstrapping aws environments
+  hosts: localhost
+  connection: local
+  gather_facts: no
+  #  strategy: debug
+  #  roles:
+  #    - vpc
+  #    #- rds
+  #    - webservers
+  tasks:
+    - name: "VPC"
+      ec2_vpc_net:
+        name: "{{ vpc.name }}"
+        cidr_block: "{{ vpc.cidr_block }}"
+        profile: "{{ aws_profile }}"
+        region: "{{ aws_region }}"
+        tags:
+          module: ec2_vpc_net
+      register: _vpc
+    - debug: var=_vpc verbosity=1
+
+    - name: "Internet Gateway"
+      ec2_vpc_igw:
+        vpc_id: "{{ _vpc.vpc.id }}"
+        profile: "{{ aws_profile }}"
+        region: "{{ aws_region }}"
+      register: _igw
+    - debug: var=_igw verbosity=1
+
+    - name: "Subnet"
+      ec2_vpc_subnet:
+        vpc_id: "{{ _vpc.vpc.id }}"
+        az: "{{ item.az }}"
+        cidr: "{{ item.cidr }}"
+        resource_tags:
+          Name: "{{ item.name }}"
+        profile: "{{ aws_profile }}"
+        region: "{{ aws_region }}"
+      with_items: "{{ subnet }}"
+      register: _subnet
+    - debug: var=_subnet verbosity=1
+
+#    - name: "NAT Gateway"
+#      ec2_vpc_nat_gateway:
+#        subnet_id: "{{ _subnet.results | selectattr('item.name', 'equalto', 'public-1a') | map(attribute='subnet.id') | list | first }}"
+#        wait: yes
+#        if_exist_do_not_create: true
+#        profile: "{{ aws_profile }}"
+#        region: "{{ aws_region }}"
+#      register: _nat_gw
+#    - debug: var=_nat_gw verbosity=1
+
+    - name: "Route Table (Public)"
+      ec2_vpc_route_table:
+        vpc_id: "{{ _vpc.vpc.id }}"
+        tags:
+          Name: "PublicRoute"
+        subnets: "{{ _subnet.results | selectattr('item.route', 'equalto', 'public') | map(attribute='subnet.id') | list }}"
+        routes:
+          - dest: 0.0.0.0/0
+            gateway_id: "{{ _igw.gateway_id }}"
+        profile: "{{ aws_profile }}"
+        region: "{{ aws_region }}"
+      register: _public_rt
+    - debug: var=_public_rt verbosity=1
+
+#    - name: "Route Table (Private)"
+#      ec2_vpc_route_table:
+#        vpc_id: "{{ _vpc.vpc.id }}"
+#        tags:
+#          Name: "PrivateRoute"
+#        subnets: "{{ _subnet.results | selectattr('item.route', 'equalto', 'private') | map(attribute='subnet.id') | list }}"
+#        routes:
+#          - dest: 0.0.0.0/0
+#            interface_id: "{{ _nat_gw.nat_gateway_addresses[0].network_interface_id }}"
+#        profile: "{{ aws_profile }}"
+#        region: "{{ aws_region }}"
+#      register: _private_rt
+#    - debug: var=_private_rt verbosity=1
+
+    - name: "Keypair"
+      ec2_key:
+        name: "{{ keypair.name }}"
+        profile: "{{ aws_profile }}"
+        region: "{{ aws_region }}"
+      register: _keypair
+    - debug: var=_keypair verbosity=1
+
+    - name: "Create Keypair File"
+      file:
+        path: ~/.ssh/{{ _keypair.key.name }}.pem
+        state: touch
+        mode: 0600
+      when: _keypair.key.private_key is defined
+
+    - name: "Keypair Write"
+      shell: echo "{{ _keypair.key.private_key }}" > ~/.ssh/"{{ _keypair.key.name }}".pem
+      when: _keypair.key.private_key is defined
+
+    - name: "Security Group"
+      ec2_group:
+        name: "{{ item.name }}"
+        description: "{{ item.desc }}"
+        vpc_id: "{{ _vpc.vpc.id }}"
+        profile: "{{ aws_profile }}"
+        region: "{{ aws_region }}"
+        purge_rules: yes
+        rules: "{{ item.rules }}"
+      with_items: "{{ sg }}"
+      register: _sg
+    - debug: var=_sg verbosity=1
+
+    - name: "EC2"
+      ec2:
+        instance_tags:
+          Name: "{{ item.name }}"
+          Env: "{{ env }}"
+        count_tag:
+          Name: "{{ item.name }}"
+          Env: "{{ env }}"
+        exact_count: "{{ item.exact_count }}"
+        instance_type: "{{ item.instance_type }}"
+        image: "{{ item.ami_image }}"
+        vpc_subnet_id: "{{ _subnet.results | selectattr('item.name', 'equalto', item.subnet) | map(attribute='subnet.id') | list | first }}"
+        group: "{{ item.security_group }}"
+        assign_public_ip: yes
+        volumes:
+          - device_name: /dev/xvda
+            volume_type: gp2
+            volume_size: "{{ item.volume_size }}"
+        key_name: "{{ keypair.name }}"
+        wait: yes
+        wait_timeout: 180
+        profile: "{{ aws_profile }}"
+        region: "{{ aws_region }}"
+      with_items: "{{ ec2 }}"
+      register: _ec2
