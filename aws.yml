@@ -108,12 +108,11 @@
 
     - name: "EC2"
       ec2:
-        instance_tags:
+        instance_tags: &TAG_INFO
           Name: "{{ item.name }}"
+          Role: "{{ item.role }}"
           Env: "{{ env }}"
-        count_tag:
-          Name: "{{ item.name }}"
-          Env: "{{ env }}"
+        count_tag: *TAG_INFO
         exact_count: 1
         instance_type: "{{ item.instance_type }}"
         image: "{{ item.ami_image }}"
