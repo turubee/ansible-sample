@@ -1,0 +1,4 @@
+nginx_version: 1.10.1
+swap_file_path: /swap
+swap_size_mb: 1024
+

@@ -1,0 +1,39 @@
+---
+- name: create swap file
+  command: dd if=/dev/zero of={{ swap_file_path }} bs=1M count={{ swap_size_mb }}
+  args:
+    creates: '{{ swap_file_path }}'
+  when: ansible_swaptotal_mb == 0
+  register: create_swapfile
+
+- name: change swap file permissions
+  file:
+    path: "{{ swap_file_path }}"
+    owner: root
+    group: root
+    mode: 0600
+  when: ansible_swaptotal_mb == 0 and create_swapfile.changed
+
+- name: get swap file type
+  command: file {{ swap_file_path }}
+  register: swap_file_test
+  changed_when: false
+  check_mode: no
+
+- name: make swap file
+  command: mkswap {{ swap_file_path }}
+  when: swap_file_test.stdout.find('swap file') == -1
+
+- name: set swap entry to fstab
+  mount:
+    name: swap
+    src: '{{ swap_file_path }}'
+    fstype: swap
+    opts: defaults
+    passno: '0'
+    dump: '0'
+    state: present
+
+- name: mount swap
+  command: swapon {{ swap_file_path }}
+  when: ansible_swaptotal_mb < 1

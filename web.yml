@@ -1,0 +1,15 @@
+---
+- name: sample playbook test
+  hosts: tag_Role_web
+  remote_user: ec2-user
+  become: yes
+  roles:
+    - common
+    - swap
+  tasks:
+    - name: install nginx
+      yum: name=nginx state=present
+
+    - name: start and enabled nginx
+      service: name=nginx state=started enabled=yes
+

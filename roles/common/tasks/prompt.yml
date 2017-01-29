@@ -1,0 +1,13 @@
+---
+- name: add nickname enviromnent variable via profile.d
+  lineinfile:
+    state: present
+    dest: /etc/profile.d/prompt.sh
+    line: "export NICKNAME={{ env }}.{{ name }}"
+    create: true
+
+- name: setup primary prompt
+  replace:
+    dest: /etc/bashrc
+    regexp: 'PS1="\[\\u@\\h\s\\W\]'
+    replace: 'PS1="[\u@$NICKNAME \W]'

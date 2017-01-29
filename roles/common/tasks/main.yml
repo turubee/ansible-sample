@@ -1,0 +1,9 @@
+---
+- name: localtime settings
+  include: localize.yml
+- name: disable unused services
+  include: services.yml
+- name: setting prompt
+  include: prompt.yml
+- name: install common packages
+  include: packages.yml

@@ -1,0 +1,13 @@
+---
+- service: name={{ item }} state=stopped enabled=no
+  with_items:
+    - ip6tables
+    - auditd
+    - netfs
+    - lvm2-monitor
+    - mdmonitor
+    - rpcbind
+    - rpcgssd
+    - nfslock
+    - atd
+    - acpid
