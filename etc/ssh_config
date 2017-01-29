@@ -1,0 +1,5 @@
+Host *
+  User ec2-user
+  IdentityFile ~/.ssh/dcube-prod.pem
+  StrictHostKeyChecking no
+  UserKnownHostsFile /dev/null

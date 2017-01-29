@@ -1,5 +1,5 @@
 venv/*
-**/site.retry
 **/*.pyc
-sample/vault_passwd
-sample/results
+vault_passwd
+results/
+logs/

@@ -48,10 +48,14 @@ sg:
 
 ec2:
   - name: web1
-    exact_count: 1
-    state: present
     instance_type: t2.micro
     ami_image: ami-56d4ad31
     security_group: ['webserver']
     subnet: public-1a
+    volume_size: 8
+  - name: web2
+    instance_type: t2.micro
+    ami_image: ami-56d4ad31
+    security_group: ['webserver']
+    subnet: public-1c
     volume_size: 8

@@ -1,3 +1,0 @@
-python-dateutil
-boto
-boto3

@@ -3,11 +3,6 @@
   hosts: localhost
   connection: local
   gather_facts: no
-  #  strategy: debug
-  #  roles:
-  #    - vpc
-  #    #- rds
-  #    - webservers
   tasks:
     - name: "VPC"
       ec2_vpc_net:
@@ -119,7 +114,7 @@
         count_tag:
           Name: "{{ item.name }}"
           Env: "{{ env }}"
-        exact_count: "{{ item.exact_count }}"
+        exact_count: 1
         instance_type: "{{ item.instance_type }}"
         image: "{{ item.ami_image }}"
         vpc_subnet_id: "{{ _subnet.results | selectattr('item.name', 'equalto', item.subnet) | map(attribute='subnet.id') | list | first }}"
@@ -136,3 +131,15 @@
         region: "{{ aws_region }}"
       with_items: "{{ ec2 }}"
       register: _ec2
+    - debug: var=_ec2 verbosity=1
+    - debug: msg="{{ _ec2.results | map(attribute='tagged_instances') | list }}"
+
+    # TODO: support exact_count more than 1
+    - name: "Wait for SSH to come up"
+      wait_for:
+        host: "{{ item.public_dns_name }}"
+        port: 22
+        timeout: 300
+        delay: 10
+        state: started
+      with_items: "{{ _ec2.results | selectattr('tagged_instances', 'defined') | map(attribute='tagged_instances') | list }}"
