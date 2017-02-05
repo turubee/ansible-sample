@@ -98,7 +98,6 @@
       register: _ec2
     - debug: var=_ec2 verbosity=1
 
-    # TODO: support exact_count more than 1
     - name: "Wait for SSH to come up"
       wait_for:
         host: "{{ item.public_dns_name }}"
@@ -120,10 +119,10 @@
       register: _elb
     - debug: var=_elb verbosity=1
 
-    - name: "Register ec2 instances"
-      ec2_elb:
-        ec2_elbs: "{{ elb[0].name }}"
-        instance_id: "{{ item.id }}"
-        state: present
-        wait: no
-      with_items: "{{ _ec2.results | selectattr('tagged_instances', 'defined') | map(attribute='tagged_instances') | list }}"
+    #- name: "Register ec2 instances"
+    #  ec2_elb:
+    #    ec2_elbs: "{{ elb[0].name }}"
+    #    instance_id: "{{ item.id }}"
+    #    state: present
+    #    wait: no
+    #  with_items: "{{ _ec2.results | selectattr('tagged_instances', 'defined') | map(attribute='tagged_instances') | list }}"

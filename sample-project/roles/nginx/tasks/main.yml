@@ -8,5 +8,9 @@
     - conf.d/virtual.conf
   notify: reload nginx
 
+- file:
+    path: /usr/share/nginx/www
+    state: directory
+
 - name: start and enabled nginx
   service: name=nginx state=started enabled=yes
