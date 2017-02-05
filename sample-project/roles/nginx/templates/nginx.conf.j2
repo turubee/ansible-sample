@@ -1,0 +1,44 @@
+worker_processes        {{ nginx_worker_proccesses }};
+
+events {
+    worker_connections  {{ nginx_worker_connections }};
+    use                 epoll;
+    multi_accept        on;
+}
+
+http {
+    include             /etc/nginx/mime.types;
+    default_type        application/octet-stream;
+    sendfile            on;
+    tcp_nopush          on;
+    tcp_nodelay         on;
+    keepalive_timeout   {{ nginx_keepalive_timeout }};
+    types_hash_max_size 2048;
+
+    gzip                on;
+    gzip_http_version   1.0;
+    gzip_comp_level     9;
+    gzip_proxied        any;
+    gzip_types          text/plain text/css application/x-javascript application/xml application/xml+rss text/javascript application/json text/json application/javascript;
+    gzip_disable        MSIE [1-6]\.";
+    gzip_min_length     20;
+
+    log_format ltsv 'ip:$http_x_real_ip\t'
+                    'user:$remote_user\t'
+                    'time:$time_local\t'
+                    'host:$remote_addr\t'
+                    'req:$request\t'
+                    'status:$status\t'
+                    'size:$body_bytes_sent\t'
+                    'referer:$http_referer\t'
+                    'ua:$http_user_agent\t'
+                    'forwardedfor:$http_x_forwarded_for\t'
+                    'reqtime:$request_time\t'
+                    'apptime:$upstream_response_time';
+    access_log /var/log/nginx/access.log ltsv;
+
+    include /etc/nginx/conf.d/*.conf;
+
+    # Server directive
+    include listen.conf;
+}

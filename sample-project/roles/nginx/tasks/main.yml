@@ -2,5 +2,11 @@
 - name: install nginx
   yum: name=nginx state=present
 
-- template: src=nginx/nginx.conf.j2 dest=/etc/nginx/nginx.conf
+- template: src={{ item }}.j2 dest=/etc/nginx/{{ item }}
+  with_items:
+    - nginx.conf
+    - conf.d/virtual.conf
   notify: reload nginx
+
+- name: start and enabled nginx
+  service: name=nginx state=started enabled=yes

@@ -6,10 +6,4 @@
   roles:
     - common
     - swap
-  tasks:
-    - name: install nginx
-      yum: name=nginx state=present
-      register: result
-
-    - name: start and enabled nginx
-      service: name=nginx state=started enabled=yes
+    - nginx
