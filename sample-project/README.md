@@ -30,3 +30,8 @@ $ ansible-playbook -i inventories/prod/ec2.py playbooks/deploy.yml --diff
 
 How to Destroy
 ---
+```
+$ aws elb delete-load-balancer --load-balancer-name web-elb
+$ aws ec2 terminate-instances --instance-ids $(aws ec2 describe-instances --filter "Name=tag:Role,Values=web" | jq -r '.Reservations[].Instances[].InstanceId' | xargs)
+```
+** Deleting vpc is dangerous, so do it with the AWS console **
