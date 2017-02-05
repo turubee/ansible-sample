@@ -1,0 +1,10 @@
+web1 ansible_host=192.168.33.101
+
+[web]
+web1 ansible_host=192.168.33.101
+web2 ansible_host=192.168.33.102
+
+[all:vars]
+ansible_ssh_private_key_file=.vagrant/machines/{{ inventory_hostname }}/virtualbox/private_key
+ansible_ssh_user=vagrant
+ansible_ssh_extra_args='-o StrictHostKeyChecking=no'

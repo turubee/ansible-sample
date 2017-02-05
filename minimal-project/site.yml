@@ -1,0 +1,10 @@
+---
+- hosts: web
+  become: yes
+  tasks:
+
+  - name: install nginx
+    yum: name=nginx state=present
+
+  - name: nginx running and enabled
+    service: name=nginx state=started enabled=yes
