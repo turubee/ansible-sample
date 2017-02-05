@@ -1,0 +1,5 @@
+54.238.215.248
+#localhost
+
+[all:vars]
+ansible_user=ec2-user

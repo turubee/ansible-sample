@@ -2,38 +2,24 @@ env: prod
 name: "{{ ec2_tag_Name }}"
 aws_profile: dcube-prod
 aws_region: ap-northeast-1
+az1: "{{ aws_region }}a"
+az2: "{{ aws_region }}c"
 
 vpc:
-  name: prod-vpc
+  name: dcube-prod-vpc
   cidr_block: 10.10.0.0/16
 subnet:
   - name: public-1a
     cidr: 10.10.1.0/24
-    az: ap-northeast-1a
+    az: "{{ az1 }}"
     route: public
   - name: public-1c
     cidr: 10.10.3.0/24
-    az: ap-northeast-1c
+    az: "{{ az2 }}"
     route: public
-  - name: private-1a
-    cidr: 10.10.11.0/24
-    az: ap-northeast-1a
-    route: private
-  - name: private-1c
-    cidr: 10.10.13.0/24
-    az: ap-northeast-1c
-    route: private
 keypair:
   name: dcube-{{ env }}
 sg:
-  - name: proxyserver
-    desc: "proxyserver security group"
-    rules:
-      - proto: tcp
-        from_port: 22
-        to_port: 22
-        cidr_ip: 0.0.0.0/0
-
   - name: webserver
     desc: "webserver security group"
     rules:
@@ -46,19 +32,42 @@ sg:
         to_port: 22
         #cidr_ip: "{{ vpc.cidr_block }}"
         cidr_ip: 0.0.0.0/0
+  - name: web-elb
+    desc: "web-elb security group"
+    rules:
+      - proto: tcp
+        from_port: 80
+        to_port: 80
+        cidr_ip: 0.0.0.0/0
 
 ec2:
   - name: web1
+    subnet: public-1a
     role: web
     instance_type: t2.micro
     ami_image: ami-56d4ad31
     security_group: ['webserver']
-    subnet: public-1a
     volume_size: 8
   - name: web2
+    subnet: public-1c
     role: web
     instance_type: t2.micro
     ami_image: ami-56d4ad31
     security_group: ['webserver']
-    subnet: public-1c
     volume_size: 8
+
+elb:
+  - name: web-elb
+    security_group: web-elb
+    listeners:
+      - protocol: http
+        load_balancer_port: 80
+        instance_port: 80
+    health_check:
+        ping_protocol: http
+        ping_port: 80
+        ping_path: /
+        response_timeout: 5
+        interval: 10
+        unhealthy_threshold: 3
+        healthy_threshold: 3

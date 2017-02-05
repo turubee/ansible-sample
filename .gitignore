@@ -1,5 +1,5 @@
-venv/*
+*/venv/*
 **/*.pyc
-vault_passwd
-results/
-logs/
+*/vault_passwd
+*/results/
+*/logs/
