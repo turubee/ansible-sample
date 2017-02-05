@@ -1,0 +1,47 @@
+---
+- name: deploy web server
+  hosts: tag_Role_web
+  remote_user: ec2-user
+  # deployment bulk-nodes or percent (1,2,50%,100%)
+  serial: 1
+  become: yes
+  pre_tasks:
+    - name: describe ec2 instances
+      action: ec2_facts
+    - name: Instance De-register
+      become: no
+      local_action:
+        module: ec2_elb
+        ec2_elbs: web-elb
+        instance_id: "{{ ansible_ec2_instance_id }}"
+        state: 'absent'
+        profile: "{{ aws_profile }}"
+        region: "{{ aws_region }}"
+
+  tasks:
+    - name: remove artifact directory
+      file:
+        path: /usr/share/nginx/www
+        state: absent
+    - name: deploy samplepage
+      git:
+        repo: https://github.com/turubee/samplepage.git
+        dest: /usr/share/nginx/www/
+        force: yes
+    - name: remove .git directory
+      file:
+        path: /usr/share/nginx/www/.git
+        state: absent
+
+  post_tasks:
+    - name: Instance Register
+      become: no
+      local_action:
+        module: ec2_elb
+        instance_id: "{{ ansible_ec2_instance_id }}"
+        ec2_elbs: "{{ item }}"
+        state: present
+        wait_timeout: 300
+        profile: "{{ aws_profile }}"
+        region: "{{ aws_region }}"
+      with_items: web-elb
